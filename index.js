@@ -43,8 +43,8 @@ async function run() {
         total_amount: product[0].price,
         currency: "USD",
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${tran_id}`,
-        fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
+        success_url: `https://sellora-server.vercel.app/payment/success/${tran_id}`,
+        fail_url: `https://sellora-server.vercel.app/payment/fail/${tran_id}`,
         cancel_url: "http://localhost:3030/cancel",
         ipn_url: "http://localhost:3030/ipn",
         shipping_method: "Courier",
@@ -83,7 +83,6 @@ async function run() {
           productId: product[0]._id,
           paidStatus: false,
           tranjectionId: tran_id,
-          Timestamp: true,
         };
         const result = orderCollection.insertOne(finalOrder);
       });
@@ -99,7 +98,7 @@ async function run() {
         );
         if (result.modifiedCount > 0) {
           res.redirect(
-            `http://localhost:5173/payment/success/${req?.params?.tranId}`
+            `https://sellora25.netlify.app/payment/success/${req?.params?.tranId}`
           );
         }
       });
@@ -110,7 +109,7 @@ async function run() {
         });
         if (result.deletedCount) {
           res.redirect(
-            `http://localhost:5173/payment/fail/${req?.fail?.tranId}`
+            `https://sellora25.netlify.app/payment/fail/${req?.fail?.tranId}`
           );
         }
         // console.log(req.params.tranId);
@@ -120,7 +119,35 @@ async function run() {
     // user Create
     app.post("/users", async (req, res) => {
       const user = req.body;
+      // const query = { email: user.email };
+      // const existingUser = await userCollection.findOne(query);
+      // if (existingUser) {
+      //   return res.send({ message: "user already exists", insertedId: null });
+      // }
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+    app.patch("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const user = req.body;
+      const filter = { email: id };
+      // console.log(query);
+      const updatedDoc = {
+        $set: {
+          name: `${user.firstName} ${user.lastName}`,
+          userName: user.userName,
+          address: user.address,
+          phone: user.phone,
+          address: user.address,
+        },
+      };
+      const result = await userCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+    app.get("/users/:id", async (req, res) => {
+      const userEmail = req.params.id;
+      const filter = { email: userEmail };
+      const result = await userCollection.findOne(filter);
       res.send(result);
     });
     // all products get from database
@@ -150,6 +177,12 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await cartCollection.deleteOne(query);
+      res.send(result);
+    });
+    app.get("/orders/:id", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await orderCollection.find(query).toArray();
       res.send(result);
     });
   } finally {
